@@ -23,13 +23,21 @@
     document.addEventListener('load',function(){
       console.log('document load');
     })
+
+    function modified() {
+        console.log('div DOMSubtreeModified');
+    }
+
+    function inserted() {
+        console.log('div DOMNodeInserted');
+    }
   </script>
 </head>
 <body>
-    <div class='div'>
+    <div class='div' DOMSubtreeModified="modified()" DOMNodeInserted="inserted()"> 
       Test dom load.
     </div>
-    <script type="text/javascript">
+    <!--<script type="text/javascript">
       var divElement = document.getElementsByTagName('div')[0];
 
       divElement.addEventListener('DOMSubtreeModified',function(){
@@ -39,6 +47,6 @@
       divElement.addEventListener('DOMNodeInserted',function(){
         console.log('div DOMNodeInserted');
       })
-    </script>
+    </script>-->
 </body>
 </html>
