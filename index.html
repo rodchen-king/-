@@ -1,0 +1,44 @@
+<!Doctye html>
+<html>
+<head>
+  <style>
+    .div {
+      color: blue;
+    }  
+  </style>
+  
+  <script type="text/javascript">
+    window.addEventListener('load',function(){
+      console.log('window load');
+    })
+
+    document.addEventListener('readystatechange',function(){
+      console.log('document ' + document.readyState);
+    })
+
+    document.addEventListener('DOMContentLoaded',function(){
+      console.log('document DOMContentLoaded');
+    })
+    //document 没有load事件??
+    document.addEventListener('load',function(){
+      console.log('document load');
+    })
+  </script>
+</head>
+<body>
+    <div class='div'>
+      Test dom load.
+    </div>
+    <script type="text/javascript">
+      var divElement = document.getElementsByTagName('div');
+
+      document.addEventListener('divElement',function(){
+        console.log('div DOMSubtreeModified');
+      })
+
+      document.addEventListener('divElement',function(){
+        console.log('div DOMNodeInserted');
+      })
+    </script>
+</body>
+</html>
