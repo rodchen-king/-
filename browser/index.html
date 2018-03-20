@@ -32,11 +32,11 @@
     <script type="text/javascript">
       var divElement = document.getElementsByTagName('div')[0];
 
-      document.addEventListener('divElement',function(){
+      divElement.addEventListener('divElement',function(){
         console.log('div DOMSubtreeModified');
       })
 
-      document.addEventListener('divElement',function(){
+      divElement.addEventListener('divElement',function(){
         console.log('div DOMNodeInserted');
       })
     </script>
