@@ -24,13 +24,13 @@
       console.log('document load');
     })
 
-    var divElement = document.getElementByTagName('div');
+    var divElement = document.getElementsByTagName('div');
 
-    document.addEventListener('DOMSubtreeModified',function(){
+    divElement.addEventListener('DOMSubtreeModified',function(){
       console.log('div DOMSubtreeModified');
     })
 
-    document.addEventListener('DOMNodeInserted',function(){
+    divElement.addEventListener('DOMNodeInserted',function(){
       console.log('div DOMNodeInserted');
     })
   </script>
