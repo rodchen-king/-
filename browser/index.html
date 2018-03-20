@@ -23,21 +23,22 @@
     document.addEventListener('load',function(){
       console.log('document load');
     })
-
-    var divElement = document.getElementsByTagName('div');
-
-    divElement.addEventListener('DOMSubtreeModified',function(){
-      console.log('div DOMSubtreeModified');
-    })
-
-    divElement.addEventListener('DOMNodeInserted',function(){
-      console.log('div DOMNodeInserted');
-    })
   </script>
 </head>
 <body>
     <div class='div'>
       Test dom load.
     </div>
+    <script type="text/javascript">
+      var divElement = document.getElementsByTagName('div');
+
+      document.addEventListener('divElement',function(){
+        console.log('div DOMSubtreeModified');
+      })
+
+      document.addEventListener('divElement',function(){
+        console.log('div DOMNodeInserted');
+      })
+    </script>
 </body>
 </html>
