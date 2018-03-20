@@ -1,2 +1,4 @@
 http://www1.qdfuns.com/feres.php?do=picture&listtype=book
 https://uptodate.frontendrescue.org/zh/
+
+　resolve body JavaScript --> document interactive -->  document DOMContentLoaded --> document complete -->  window load 
