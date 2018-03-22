@@ -2,3 +2,35 @@ http://www1.qdfuns.com/feres.php?do=picture&listtype=book
 https://uptodate.frontendrescue.org/zh/
 
 　resolve body JavaScript --> document interactive -->  document DOMContentLoaded --> document complete -->  window load 
+
+http://www1.qdfuns.com/feres.php?do=picture&listtype=book
+https://uptodate.frontendrescue.org/zh/
+
+浏览器性能：
+https://www.cnblogs.com/shapeY/archive/2017/10/13/7662406.html
+https://segmentfault.com/a/1190000003991459?_ea=537807
+https://www.cnblogs.com/quincyWang/p/6932382.html
+http://www.cnblogs.com/ys-wuhan/p/6985464.html
+https://www.cnblogs.com/ys-wuhan/p/6985624.html
+
+
+
+还是先看一下当前的执行的过程：
+
+
+
+
+Send Request		发送网络请求时触发
+Receive Response	响应头报文到达时触发
+Receive Data		请求的响应数据到达事件，如果响应数据很大（拆包），可能会多次触发该事件
+Finish Loading		网络请求完毕事件
+
+
+Parse HTML			浏览器执行HTML解析
+Recalculate Style   生成渲染树（渲染树与dom树不同的地方在于，dom树会把所有的dom节点都展示出来，渲染树只会展示display非none的元素）
+Layout 				将渲染树上的节点，根据它的高度，宽度，位置，为节点生成盒子（layout）。
+
+
+Update Layer Tree   
+Paint				确定渲染树上的节点的大小和位置后，便可以对节点进行涂鸦（paint）
+Composite Layers	合成层；当渲染树上的节点涂鸦完毕后，便生成位图（bitmap），浏览器把此位图从CPU传输到GPU
