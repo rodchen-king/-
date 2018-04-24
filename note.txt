@@ -1,0 +1,105 @@
+HTTP 认证
+计算机本身无法判断坐在显示器前的使用者的身份。进一步说，也无法确认网络的那头究竟有谁。需要核对“登录者本人才知道的信息”、“登录者本人才会有的信息”。
+
+核对的信息通常是指以下这些：
+密码：只有本人才会知道的字符串信息。
+动态令牌：仅限本人持有的设备内显示的一次性密码。
+数字证书：仅限本人（终端）持有的信息。
+生物认证：指纹和虹膜等本人的生理信息。
+IC 卡等：仅限本人持有的信息。
+
+HTTP/1.1 使用的认证方式
+BASIC 认证（基本认证）
+DIGEST 认证（摘要认证）
+SSL 客户端认证
+FormBase 认证（基于表单认证）
+Windows 统一认证（Keberos 认证、NTLM 认证）
+
+1. BASIC认证
+BASIC 认证（基本认证）是从 HTTP/1.0 就定义的认证方式。即便是现在仍有一部分的网站会使用这种认证方式。是 Web 服务器与通信客户端之间进行的认证方式。
+
+核心步骤：
+步骤 1：当请求的资源需要BASIC认证时，服务器会随状态码401Authorization Required，返回带WWW-Authenticate首部字段的响应。该字段内包含认证的方式（BASIC）及 Request-URI 安全域字符串（realm）。
+
+步骤 2：接收到状态码401的客户端为了通过BASIC认证，需要将用户ID及密码发送给服务器。发送的字符串内容是由用户ID和密码构成，两者中间以冒号（:）连接后，再经过Base64 编码处理。
+
+步骤 3：接收到包含首部字段 Authorization 请求的服务器，会对认证信息的正确性进行验证。如验证通过，则返回一条包含Request-URI资源的响应。
+
+案例（ajax get请求数据）：
+@GetMapping("/applications")
+    public ResponseEntity findAllApplications(HttpServletResponse response, HttpServletRequest request) throws IOException {
+        String sessionAuth = (String) request.getSession().getAttribute("auth");
+
+        if(!checkHeaderAuth(request, response) && sessionAuth == null){
+            response.setStatus(401);
+            response.setHeader("Cache-Control", "no-store");
+            response.setDateHeader("Expires", 0);
+            response.setHeader("WWW-authenticate", "Basic Realm=\"input your usename and password\"");
+
+            return new ResponseEntity<String>("", HttpStatus.UNAUTHORIZED);
+        }
+
+        List<Application> applications = applicationService.findAllApplications();
+        ResponseData responseData = new ResponseData();
+        Map<String, Object> data = new HashMap<String, Object>();
+        data.put("total", applications.size());
+        data.put("name", "rod chen");
+        data.put("applications", applications);
+        responseData.setResult("s");
+        responseData.setData(data);
+        return new ResponseEntity<String>(responseData.toJson(), HttpStatus.OK);
+    }
+
+    private boolean checkHeaderAuth(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String auth = request.getHeader("Authorization");
+
+        if ((auth != null) && (auth.length() > 6)) {
+            auth = auth.substring(6, auth.length());
+            String decodedAuth = getFromBASE64(auth);
+            String[] authValueArray = decodedAuth.split(":");
+
+            if (authValueArray.length == 2) {
+                String userName = decodedAuth.split(":")[0];
+                String password = decodedAuth.split(":")[1];
+
+                if (userName.equals("rodchen") && password.equals("abc123_")) {
+                    request.getSession().setAttribute("auth", decodedAuth);
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            return false;
+        }else{
+            return false;
+        }
+    }
+
+    private String getFromBASE64(String s) {
+        if (s == null)
+            return null;
+        BASE64Decoder decoder = new BASE64Decoder();
+        try {
+            byte[] b = decoder.decodeBuffer(s);
+            return new String(b);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+当第一次请求的时候，页面会弹出如下的框：
+
+上面红色框的内容是我们server设置的内容（chorme看不到这个内容，不知道是不是chorme处理了，我实在firefox测试的），对应代码：
+response.setHeader("WWW-authenticate", "Basic Realm=\"input your usename and password\"");
+这个时候呢，server已经返回了401，可惜的是在浏览器的network看不到，直到我们完成了下一步（也就是，输入内容，不管对错，或者直接关闭当前弹出框）才可以看到401的返回。
+对于server的代码，我是使用session来存储当前的验证。如果没有验证通过就一直提示验证框。
+
+缺点：
+BASIC 认证虽然采用 Base64 编码方式，但这不是加密处理。不需要
+何附加信息即可对其解码。换言之，由于明文解码后就是用户 ID和密码，在 HTTP 等非加密通信的线路上进行 BASIC 认证的过程中，如果被人窃听，被盗的可能性极高。
+另外，除此之外想再进行一次 BASIC 认证时，一般的浏览器却无法实现认证注销操作，这也是问题之一。
+BASIC 认证使用上不够便捷灵活，且达不到多数 Web 网站期望的安全性等级，因此它并不常用。
+
+2. DIGEST 认证
