@@ -103,3 +103,45 @@ BASIC 认证虽然采用 Base64 编码方式，但这不是加密处理。不需
 BASIC 认证使用上不够便捷灵活，且达不到多数 Web 网站期望的安全性等级，因此它并不常用。
 
 2. DIGEST 认证
+
+
+response.setHeader("WWW-authenticate", "Digest Realm=\"test\", nonce=\""+ new TokenUtils().generateToken() +"\", qop=\"auth\"");
+
+
+HA1=q:test:q
+HD=TdvrSdFLS7tNTSQgJbY8Yg==:00000001:3860fab15ba6dfcf:auth
+HA2=GET:/portal/applications
+
+
+public class TokenUtils {
+    private static TokenUtils ourInstance = new TokenUtils();
+
+    public static TokenUtils getInstance() {
+        return ourInstance;
+    }
+
+    public TokenUtils() {
+    }
+
+    public String generateToken() {
+        String s = String.valueOf(System.currentTimeMillis() + new Random().nextInt());
+
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("md5");
+            byte[] digest = messageDigest.digest(s.getBytes());
+
+
+            return Base64.getEncoder().encodeToString(digest);//不使用Base64的话会出现乱码。因为new String默认编码可能不能完全包含上面这个字节数组
+            //base64将每三个字节转成4个字节，这样高位就使用00补齐，这样最大也就是63，最小为0。一共只有64种情况，就不会出现乱码了。
+
+            /**
+             * Java8之前的做法
+             */
+//            BASE64Encoder encoder = new BASE64Encoder();
+//            return encoder.encode(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException();
+        }
+
+    }
+}
