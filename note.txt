@@ -1,147 +1,59 @@
-HTTP 认证
-计算机本身无法判断坐在显示器前的使用者的身份。进一步说，也无法确认网络的那头究竟有谁。需要核对“登录者本人才知道的信息”、“登录者本人才会有的信息”。
+spring 入门
+1. IOC
+(1) 接口及面向接口编程
+接口
+用于沟通的中介物的抽象化
+实体把自己提供给外界的一种抽象化说明，用以由内部操作分离出外部沟通方法，使其能被修改内部而不影响外界其他实体与其交互的方式。
+对应java几口即声明，生命了那些方法是对外提供的。
 
-核对的信息通常是指以下这些：
-密码：只有本人才会知道的字符串信息。
-动态令牌：仅限本人持有的设备内显示的一次性密码。
-数字证书：仅限本人（终端）持有的信息。
-生物认证：指纹和虹膜等本人的生理信息。
-IC 卡等：仅限本人持有的信息。
+面向接口编程
+结构设计中，分清层次及调用关系，每层只向外(上层)提供一组功能接口，各层次仅依赖接口而非实现类。
+接口实现的变动不影响各层间的调用
+面向接口编程中的接口是用于隐藏具体实现和实现多态性的组件
+(2) 什么是IOC
+IOC：控制反转，控制权的转移，应用程序本身不负责依赖对象的创建和维护，而是由外部容器负责创建和维护。
+*获得依赖对象的过程被反转了。
+DI:依赖注入是其一种实现IOC方式。由IOC容器在运行期间，动态的将某种依赖关系注入到对象之中。
 
-HTTP/1.1 使用的认证方式
-BASIC 认证（基本认证）
-DIGEST 认证（摘要认证）
-SSL 客户端认证
-FormBase 认证（基于表单认证）
-Windows 统一认证（Keberos 认证、NTLM 认证）
+目的：创建对象并且组装对象之间的关系。
 
-1. BASIC认证
-BASIC 认证（基本认证）是从 HTTP/1.0 就定义的认证方式。即便是现在仍有一部分的网站会使用这种认证方式。是 Web 服务器与通信客户端之间进行的认证方式。
+类比：房屋中介
 
-核心步骤：
-步骤 1：当请求的资源需要BASIC认证时，服务器会随状态码401Authorization Required，返回带WWW-Authenticate首部字段的响应。该字段内包含认证的方式（BASIC）及 Request-URI 安全域字符串（realm）。
-
-步骤 2：接收到状态码401的客户端为了通过BASIC认证，需要将用户ID及密码发送给服务器。发送的字符串内容是由用户ID和密码构成，两者中间以冒号（:）连接后，再经过Base64 编码处理。
-
-步骤 3：接收到包含首部字段 Authorization 请求的服务器，会对认证信息的正确性进行验证。如验证通过，则返回一条包含Request-URI资源的响应。
-
-案例（ajax get请求数据）：
-@GetMapping("/applications")
-    public ResponseEntity findAllApplications(HttpServletResponse response, HttpServletRequest request) throws IOException {
-        String sessionAuth = (String) request.getSession().getAttribute("auth");
-
-        if(!checkHeaderAuth(request, response) && sessionAuth == null){
-            response.setStatus(401);
-            response.setHeader("Cache-Control", "no-store");
-            response.setDateHeader("Expires", 0);
-            response.setHeader("WWW-authenticate", "Basic Realm=\"input your usename and password\"");
-
-            return new ResponseEntity<String>("", HttpStatus.UNAUTHORIZED);
-        }
-
-        List<Application> applications = applicationService.findAllApplications();
-        ResponseData responseData = new ResponseData();
-        Map<String, Object> data = new HashMap<String, Object>();
-        data.put("total", applications.size());
-        data.put("name", "rod chen");
-        data.put("applications", applications);
-        responseData.setResult("s");
-        responseData.setData(data);
-        return new ResponseEntity<String>(responseData.toJson(), HttpStatus.OK);
-    }
-
-    private boolean checkHeaderAuth(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String auth = request.getHeader("Authorization");
-
-        if ((auth != null) && (auth.length() > 6)) {
-            auth = auth.substring(6, auth.length());
-            String decodedAuth = getFromBASE64(auth);
-            String[] authValueArray = decodedAuth.split(":");
-
-            if (authValueArray.length == 2) {
-                String userName = decodedAuth.split(":")[0];
-                String password = decodedAuth.split(":")[1];
-
-                if (userName.equals("rodchen") && password.equals("abc123_")) {
-                    request.getSession().setAttribute("auth", decodedAuth);
-
-                    return true;
-                }
-
-                return false;
-            }
-
-            return false;
-        }else{
-            return false;
-        }
-    }
-
-    private String getFromBASE64(String s) {
-        if (s == null)
-            return null;
-        BASE64Decoder decoder = new BASE64Decoder();
-        try {
-            byte[] b = decoder.decodeBuffer(s);
-            return new String(b);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-当第一次请求的时候，页面会弹出如下的框：
-
-上面红色框的内容是我们server设置的内容（chorme看不到这个内容，不知道是不是chorme处理了，我实在firefox测试的），对应代码：
-response.setHeader("WWW-authenticate", "Basic Realm=\"input your usename and password\"");
-这个时候呢，server已经返回了401，可惜的是在浏览器的network看不到，直到我们完成了下一步（也就是，输入内容，不管对错，或者直接关闭当前弹出框）才可以看到401的返回。
-对于server的代码，我是使用session来存储当前的验证。如果没有验证通过就一直提示验证框。
-
-缺点：
-BASIC 认证虽然采用 Base64 编码方式，但这不是加密处理。不需要
-何附加信息即可对其解码。换言之，由于明文解码后就是用户 ID和密码，在 HTTP 等非加密通信的线路上进行 BASIC 认证的过程中，如果被人窃听，被盗的可能性极高。
-另外，除此之外想再进行一次 BASIC 认证时，一般的浏览器却无法实现认证注销操作，这也是问题之一。
-BASIC 认证使用上不够便捷灵活，且达不到多数 Web 网站期望的安全性等级，因此它并不常用。
-
-2. DIGEST 认证
+(3) Spring的Bean配置
 
 
-response.setHeader("WWW-authenticate", "Digest Realm=\"test\", nonce=\""+ new TokenUtils().generateToken() +"\", qop=\"auth\"");
+
+(4) Bean的初始化
+
+(5) Spring的常用注入方式
 
 
-HA1=q:test:q
-HD=TdvrSdFLS7tNTSQgJbY8Yg==:00000001:3860fab15ba6dfcf:auth
-HA2=GET:/portal/applications
+Java 接口
+接口（英文：Interface），在JAVA编程语言中是一个抽象类型，是抽象方法的集合，接口通常以interface来声明。一个类通过继承接口的方式，从而来继承接口的抽象方法。
+接口并不是类，编写接口的方式和类很相似，但是它们属于不同的概念。类描述对象的属性和方法。接口则包含类要实现的方法。除非实现接口的类是抽象类，否则该类要定义接口中的所有方法。
+接口无法被实例化，但是可以被实现。一个实现接口的类，必须实现接口内所描述的所有方法，否则就必须声明为抽象类。另外，在 Java 中，接口类型可用来声明一个变量，他们可以成为一个空指针，或是被绑定在一个以此接口实现的对象。
 
+接口与类相似点：
+一个接口可以有多个方法。
+接口文件保存在 .java 结尾的文件中，文件名使用接口名。
+接口的字节码文件保存在 .class 结尾的文件中。
+接口相应的字节码文件必须在与包名称相匹配的目录结构中。
 
-public class TokenUtils {
-    private static TokenUtils ourInstance = new TokenUtils();
+接口与类的区别：
+接口不能用于实例化对象。
+接口没有构造方法。
+接口中所有的方法必须是抽象方法。
+接口不能包含成员变量，除了 static 和 final 变量。
+接口不是被类继承了，而是要被类实现。
+接口支持多继承。
 
-    public static TokenUtils getInstance() {
-        return ourInstance;
-    }
+接口特性
+接口中每一个方法也是隐式抽象的,接口中的方法会被隐式的指定为 public abstract（只能是 public abstract，其他修饰符都会报错）。
+接口中可以含有变量，但是接口中的变量会被隐式的指定为 public static final 变量（并且只能是 public，用 private 修饰会报编译错误）。
+接口中的方法是不能在接口中实现的，只能由实现接口的类来实现接口中的方法。
 
-    public TokenUtils() {
-    }
-
-    public String generateToken() {
-        String s = String.valueOf(System.currentTimeMillis() + new Random().nextInt());
-
-        try {
-            MessageDigest messageDigest = MessageDigest.getInstance("md5");
-            byte[] digest = messageDigest.digest(s.getBytes());
-
-
-            return Base64.getEncoder().encodeToString(digest);//不使用Base64的话会出现乱码。因为new String默认编码可能不能完全包含上面这个字节数组
-            //base64将每三个字节转成4个字节，这样高位就使用00补齐，这样最大也就是63，最小为0。一共只有64种情况，就不会出现乱码了。
-
-            /**
-             * Java8之前的做法
-             */
-//            BASE64Encoder encoder = new BASE64Encoder();
-//            return encoder.encode(digest);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException();
-        }
-
-    }
-}
+抽象类和接口的区别
+1. 抽象类中的方法可以有方法体，就是能实现方法的具体功能，但是接口中的方法不行。
+2. 抽象类中的成员变量可以是各种类型的，而接口中的成员变量只能是 public static final 类型的。
+3. 接口中不能含有静态代码块以及静态方法(用 static 修饰的方法)，而抽象类是可以有静态代码块和静态方法。
+4. 一个类只能继承一个抽象类，而一个类却可以实现多个接口。
